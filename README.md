@@ -13,6 +13,11 @@ quasar dev
 ```
 
 
+### Start the app in development mode with environment variables
+```bash
+QENV=development quasar dev
+```
+
 ### Build the app for production
 ```bash
 quasar build

@@ -25,19 +25,19 @@
     <template v-if="weatherData">
       <div class="col text-white text-center">
         <div class="text-h4 text-weight-light">
-          New Delhi
+          {{ weatherData.name }}
         </div>
         <div class="text-h6 text-weight-light">
-          Rain
+          {{ weatherData.weather[0].main }}
         </div>
         <div class="text-h1 text-weight-thin q-my-lg relative-position">
-          <span>8</span>
+          <span>{{ Math.floor(weatherData.main.temp) }}</span>
           <span class="text-h4 relative-position degree">&deg; C</span>
         </div>
       </div>
 
       <div class="col text-center">
-        <img src="" alt="">
+        <img src="http://openweathermap.org/img/wn/10n.png" alt="">
       </div>
     </template>
 
@@ -49,13 +49,20 @@
         <q-btn 
           @click="getLocation" 
           color="col" 
-          flat>
+          flat
+          v-if="!gettingLocation"
+        >
           <q-icon left size="3em" name="my_location" />
           <div>Find my localtion</div>
         </q-btn>
       </div>
     </template>
 
+    <template v-if="gettingLocation">
+      <div class="col text-center text-white">
+        <i>Getting your location...</i>
+      </div>
+    </template>
 
     <div class="col skyline"></div>
 
@@ -64,22 +71,64 @@
 
 <script>
 import { defineComponent } from 'vue';
+import axios from 'axios';
 
 export default defineComponent({
   name: 'PageIndex',
   data() {
     return {
       search: '',
-      weatherData: null
+      weatherData: null,
+      gettingLocation: false,
     }
   },
   methods: {
-    getLocation() {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          console.log(position);
+    getWeather: function(lat, lon){
+      const API_KEY = process.env.OPEN_WEATHER_API_KEY;
+      const httpURL = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+
+      axios.get(httpURL)
+      .then( (response) => {
+        // handle success
+        console.log(response);
+        if (response.status === 200){
+          this.weatherData = response.data;
         }
-      )
+      })
+      .catch((error) => {
+        // handle error
+        console.log(error);
+      })
+    },
+
+    getLocation: function() {
+    
+      const success = (position) => {
+        const latitude  = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        
+        this.gettingLocation = false;
+
+        console.log("Latitude: ", latitude);
+        console.log("Longitude: ", longitude);
+
+        // Get Weather Method called
+        this.getWeather(latitude, longitude)
+      };
+
+      const error = (err) => {
+        this.gettingLocation = false;
+        console.log(error)
+      };
+
+      if(!("geolocation" in navigator)) {
+        this.gettingLocation = false;
+        console.log('Geolocation is not available.');
+      } else {
+        this.gettingLocation = true;
+        // This will open permission popup
+        navigator.geolocation.getCurrentPosition(success, error);
+      }
     }
   }
 })
